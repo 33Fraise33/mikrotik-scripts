@@ -1,4 +1,6 @@
 ## based on https://github.com/massimo-filippi/mikrotik
+# wait for boot to finish, otherwise notify does not work
+:delay 100s;
 :log info ("Running upgrade check")
 
 ########## Upgrade Routerboard
@@ -17,8 +19,6 @@
 }
 
 ########## Upgrade RouterOS
-# wait for boot to finish
-:delay 60s;
 /system/package/update/set channel=stable
 /system/package/update/check-for-updates
 
