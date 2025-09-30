@@ -3,7 +3,6 @@
 
 ########## Upgrade Routerboard
 
-:local rebootReq false
 :local curFirmware "$[/system/routerboard/get current-firmware]";
 :local upgFirmware "$[/system/routerboard/get upgrade-firmware]";
 :if ($curFirmware != $upgFirmware) do={
@@ -13,10 +12,13 @@
     /system script run "externalNotify";
    
     /system/routerboard/upgrade
-    :set rebootReq true
+    :delay 15s;
+    /system reboot
 }
 
 ########## Upgrade RouterOS
+# wait for boot to finish
+:delay 60s;
 /system/package/update/set channel=stable
 /system/package/update/check-for-updates
 
@@ -50,16 +52,7 @@
     } else={
         # This is NOT a point release (it's an x.y release), so SKIP it.
         :log info ("Skipping upgrade to $upgSoftware because it is not a point release (x.y.z).");
-        
-        # Check if a reboot is still required for the routerboard firmware
-        :if ($rebootReq) do={
-            /system reboot;
-        }
     }
 } else={
-    :if ($rebootReq) do={
-        /system reboot
-    } else={
-        :log info ("No routerboard or RouterOS upgrade found.")
-    }
+    :log info ("No routerboard or RouterOS upgrade found.")
 }
