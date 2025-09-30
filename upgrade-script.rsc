@@ -28,15 +28,34 @@
 
 ## Important note: "installed-version" was "current-version" on older Roter OSes
 :if ($curSoftware != $upgSoftware) do={
+    # search for releases who have 2 dots (7.x.x, not 7.x)
+    :local firstDot [:find $upgSoftware "."];
+    :local secondDot -1; # A value of -1 means "not found"
 
-    :global notifyMessage "Upgrading RouterOS on $[/system/identity/get name] from $curSoftware to $upgSoftware";
-    :log info ("$notifyMessage")
-    /system script run "externalNotify";
-    ## Wait for notification to be sent
-    :delay 15s;
+    # Only search for a second dot if a first one was found
+    :if ($firstDot > -1) do={
+        :set secondDot [:find $upgSoftware "." ($firstDot + 1)];
+    }
 
-    /system/package/update/install
+    # If secondDot is > -1, it means we found two dots (x.y.z format)
+    :if ($secondDot > -1) do={
+        # This IS a point release, so PROCEED with the upgrade.
+        :global notifyMessage "Upgrading RouterOS on $[/system/identity/get name] from $curSoftware to $upgSoftware";
+        :log info ("$notifyMessage")
+        /system script run "externalNotify";
+        ## Wait for notification to be sent
+        :delay 5s;
 
+        /system/package/update/install
+    } else={
+        # This is NOT a point release (it's an x.y release), so SKIP it.
+        :log info ("Skipping upgrade to $upgSoftware because it is not a point release (x.y.z).");
+        
+        # Check if a reboot is still required for the routerboard firmware
+        :if ($rebootReq) do={
+            /system reboot;
+        }
+    }
 } else={
     :if ($rebootReq) do={
         /system reboot
